@@ -1,0 +1,387 @@
+{
+  "name": "Service Reimbursements",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "data-extractor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e67f86db-bc1f-45bd-8b5a-2e457ecebd76",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        0,
+        512
+      ],
+      "webhookId": "18118afb-7fd2-47a5-a474-50813c5b20c8",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "success",
+        "options": {}
+      },
+      "id": "71ae7274-d1ed-4dd8-9c7a-9bb27680fa90",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        2016,
+        416
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.image_url }}",
+        "options": {}
+      },
+      "id": "45d355a2-93ad-421d-a523-c18f8c2bdf45",
+      "name": "Get image from URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        224,
+        512
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"inlineData\": {\n            \"data\": \"{{$json.data1}}\",\n            \"mimeType\": \"image/jpeg\"\n          }\n        }\n      ]\n    },\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"text\": \"check this\"\n        }\n      ]\n    }\n  ],\n  \"systemInstruction\": {\n    \"role\": \"user\",\n    \"parts\": [\n      {\n        \"text\": \"{{ $('Webhook').first().json.body.Requirement}}\"\n      }\n    ]\n  },\n  \"generationConfig\": {\n    \"temperature\": 1,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192,\n    \"responseMimeType\": \"application/json\",\n    \"responseSchema\": {\n      \"type\": \"object\",\n      \"properties\": {{ $('Webhook').first().json.body.properties.toJsonString()}}\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "id": "b261d666-f53a-4ed6-a361-ccf611fd459e",
+      "name": "Call Gemini API (Flash Lite) with Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        672,
+        512
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7KwFOsVdzn9eh3cS",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4a2f1343-4b5d-4de8-b04b-5640e0a38d27",
+              "name": "result",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts[0].text.parseJson()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0c12f7d6-0fe0-42e8-afe5-0c7b288396f6",
+      "name": "Edit fields to output required data alone",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        896,
+        512
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "## Car Wash Receipt Processing & Verification Workflow\n\nAutomated workflow that captures car wash receipt images, extracts data using AI, validates amounts, and stores approved transactions.\n\n- The workflow converts the image to base64 before processing.\n- It utilizes an AI-powered model (Gemini API) for text extraction.\n- The output is formatted to include only the required fields.\n- You can customize the extraction criteria by modifying the request parameters.\n- Supports integration with various applications for automated data entry and processing.\n- **To streamline receipt management, reduce manual data entry, validate transaction amounts against business limits, automatically store verified records in their database (Supabase), and send instant confirmation emails to employees for approved transactions.**\n\nSimply send a POST request with an image URL, define the extraction requirements, and the system will validate the amount, store approved receipts, and send notifications automatically.\n\n",
+        "height": 440,
+        "width": 940
+      },
+      "id": "b56596b4-56e7-40bb-952e-6a31d9813223",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        752,
+        800
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "data1",
+        "options": {
+          "encoding": "ascii"
+        }
+      },
+      "id": "1c1508ab-dbb8-4b38-b165-0581172f2173",
+      "name": "Transform image to base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        448,
+        512
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the string into JSON\nconst parsedResult = JSON.parse($input.first().json.result);\n\n// Map values to new keys\nitems[0].json.date = parsedResult[\"Date\"];\nitems[0].json.totalAmount = parsedResult[\"Total Amount\"];\nitems[0].json.transactionNumber = parsedResult[\"Transaction Number\"];\nitems[0].json.vendorName = parsedResult[\"Vendor Name\"];\n\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        512
+      ],
+      "id": "4641c2b9-0273-4faf-9347-36f314fe6dbd",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "488a5ccf-3be0-42c0-a581-be722272cf49",
+              "leftValue": "={{ $json.totalAmount }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        512
+      ],
+      "id": "563a0a84-300b-4dfc-996c-be643ef84c95",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "We’re sorry! The amount in your receipt exceeds our reimbursement limit of $200.\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        608
+      ],
+      "id": "34125b6b-a51e-432b-a6f3-b63d090bf5c2",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "tableId": "Reimbursement",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user",
+              "fieldValue": "={{ $('Webhook').item.json.body.user }}"
+            },
+            {
+              "fieldId": "user_pin",
+              "fieldValue": "={{ $('Webhook').item.json.body.user_pin }}"
+            },
+            {
+              "fieldId": "vendor_name",
+              "fieldValue": "={{ $json.vendorName }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $json.date }}"
+            },
+            {
+              "fieldId": "total_amount",
+              "fieldValue": "={{ $json.totalAmount }}"
+            },
+            {
+              "fieldId": "transaction_number",
+              "fieldValue": "={{ $json.transactionNumber }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        416
+      ],
+      "id": "618bbbf9-a7c0-4916-9b3b-30d6969c969b",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mQ1A8ejinCuKfq23",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "Receipt Submission Confirmation",
+        "message": "=Hello {{ $('Webhook').item.json.body.user }}, \n\nYour receipt for {{ $('Code in JavaScript').item.json.vendorName }} on {{ $('Code in JavaScript').item.json.date }} amounting to {{ $('Code in JavaScript').item.json.totalAmount }} has been successfully processed.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1792,
+        488
+      ],
+      "id": "e6fb394e-17a0-4307-b408-734d3ed68f6b",
+      "name": "Send a message",
+      "webhookId": "2f83f6d6-5e35-4974-abe1-b6a60941e308",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xZBAXoDVVnqU5PGd",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get image from URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get image from URL": {
+      "main": [
+        [
+          {
+            "node": "Transform image to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform image to base64": {
+      "main": [
+        [
+          {
+            "node": "Call Gemini API (Flash Lite) with Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gemini API (Flash Lite) with Image": {
+      "main": [
+        [
+          {
+            "node": "Edit fields to output required data alone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit fields to output required data alone": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f203c0bc-8b48-463f-ad88-bf2854a77ce4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1061129b8ba4c4d240e0c5a9f2502a87e9cc6827ea5d664923e7bf438b48c7e0"
+  },
+  "id": "b1fn6Zh8dAWpUOVR",
+  "tags": []
+}
