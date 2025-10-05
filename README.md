@@ -23,6 +23,10 @@ An n8n workflow that processes receipt images automatically:
 
 Reduced their receipt processing from manual entry to automatic. Saves time and keeps records organized.
 
+## Workflow
+
+![Workflow Screenshot](ss.png)
+
 ---
 
 *Custom project built upon requirements. Actual workflow not included.*
