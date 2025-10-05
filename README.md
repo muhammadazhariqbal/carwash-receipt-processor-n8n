@@ -25,7 +25,7 @@ Reduced their receipt processing from manual entry to automatic. Saves time and 
 
 ## Workflow
 
-![Workflow Screenshot](ss.png)
+![Workflow Screenshot](ServiceReimbursements-image.png)
 
 ---
 
